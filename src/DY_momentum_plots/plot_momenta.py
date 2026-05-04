@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 
 def apply_cuts(tree, cut=4.2):
     """Applies standard physics cuts to the given TTree arrays in numpy."""
-    # Read all branches into a dictionary of numpy arrays
     events = tree.arrays(library="np")
     
     class EventNamespace:
@@ -69,22 +68,30 @@ def plot_and_save(data, filename, xlabel_text, color):
     """Helper function to create and save individual ROOT-style plots."""
     fig, ax = plt.subplots(figsize=(8, 6))
     
-    # Draw histogram
-    ax.hist(data, bins=100, color=color, edgecolor='black', alpha=0.7)
+    # Calculate Mean and Standard Deviation
+    mean_val = np.mean(data)
+    std_val = np.std(data)
     
-    # 2. ROOT Equivalent of SetPadTickx(1) and SetPadTicky(1)
-    # direction='in' makes ticks point inward
-    # top=True, right=True draws ticks on the top and right axes
+    # Create the statistics label using LaTeX formatting for Greek letters
+    stat_label = fr"$\mu = {mean_val:.3f}$" + "\n" + fr"$\sigma = {std_val:.3f}$"
+    
+    # Draw histogram and assign the statistics label to it
+    ax.hist(data, bins=100, color=color, edgecolor='black', alpha=0.7, label=stat_label)
+    
+    # ROOT Equivalent of SetPadTickx(1) and SetPadTicky(1)
     ax.tick_params(axis='both', which='both', direction='in', top=True, right=True, length=6)
     
-    # 3 & 4. Set centered labels with LaTeX formatting for the subscript
-    # loc='center' acts like ROOT's CenterTitle for axes
+    # Set centered labels 
     ax.set_xlabel(xlabel_text, loc='center', fontsize=14)
     ax.set_ylabel("Counts", loc='center', fontsize=14)
     
+    # Draw the legend to act like a ROOT stat box
+    # framealpha=1.0 makes the box solid white so grid lines don't bleed through
+    ax.legend(loc='upper right', fontsize=12, frameon=True, framealpha=1.0, edgecolor='black')
+    
     plt.tight_layout()
     
-    # 1. Save as PDF
+    # Save as PDF
     plt.savefig(filename, format='pdf', dpi=300)
     print(f"Plot saved successfully as {filename}")
     
@@ -113,10 +120,9 @@ def main():
         dpz_filtered = event_data.dpz[mask]
         
         print(f"Cuts applied. Total events: {len(mask)} | Events passing cuts: {np.sum(mask)}")
-        print("Generating and saving PDF plots...")
+        print("Generating and saving PDF plots with statistics legends...")
         
         # Generate the three separate PDF plots using the helper function
-        # The 'r' before the string ensures the LaTeX syntax is interpreted correctly
         plot_and_save(dpx_filtered, "dpx_kinematics.pdf", r"Dimuon $P_{x}$ (GeV)", 'royalblue')
         plot_and_save(dpy_filtered, "dpy_kinematics.pdf", r"Dimuon $P_{y}$ (GeV)", 'crimson')
         plot_and_save(dpz_filtered, "dpz_kinematics.pdf", r"Dimuon $P_{z}$ (GeV)", 'forestgreen')
